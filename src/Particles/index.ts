@@ -9,13 +9,13 @@ interface Options {
   lineWidth: number;
 }
 
-/**
- * speed: [方向(-Π~Π), 速度(px/s)]
- */
 interface Point {
   x: number;
   y: number;
-  speed: [number, number];
+  /** 速度(px/s) */
+  speed: number;
+  /** 角度方向(-180~180) */
+  angle: number;
 }
 
 export default class Particles {
@@ -33,7 +33,9 @@ export default class Particles {
   #ctx: CanvasRenderingContext2D;
   #lastTimestemp = 0;
 
+  #mousePos: null | { x: number; y: number } = null;
   #onMouseMove: (ev: MouseEvent) => any;
+  #onMouseLeave: (ev: MouseEvent) => any;
 
   #destroyed: boolean = false;
 
@@ -51,15 +53,36 @@ export default class Particles {
     return Math.sqrt((another.x - point.x) ** 2 + (another.y - point.y) ** 2);
   }
 
-  static movePoint(point: Point, timeMs: number): Point {
-    const alph = point.speed[0];
-    const r = point.speed[1] * timeMs * 0.001;
-    return { ...point, x: point.x + r * Math.cos(alph), y: point.y - r * Math.sin(alph) };
+  static calcPointAngle(point: { x: number; y: number }, another: { x: number; y: number }) {
+    const y = point.y - another.y;
+    const x = another.x - point.x;
+    if (x === +0 || x === -0) {
+      return y > 0 ? 90 : y < 0 ? -90 : undefined;
+    }
+    if (x > 0) {
+      return (Math.atan(y / x) * 180) / Math.PI;
+    } else if (y >= 0) {
+      return 180 + (Math.atan(y / x) * 180) / Math.PI;
+    } else if (y < 0) {
+      return -180 + (Math.atan(y / x) * 180) / Math.PI;
+    }
+  }
+
+  static mirrorAngle(angle: number, axis: "x" | "y"): number {
+    if (axis === "x") {
+      return -angle;
+    }
+    if (axis === "y") {
+      if (angle >= 0 && angle < 180) {
+        return 180 - angle;
+      } else if (angle < 0 && angle >= -180) {
+        return -180 - angle;
+      }
+    }
+    return angle;
   }
 
   constructor(options: Options) {
-    // FEATURE: Partial
-
     this.#width = options.width;
     this.#height = options.height;
     this.#count = options.count;
@@ -86,15 +109,17 @@ export default class Particles {
     this.#points = new Array(this.#count).fill(null).map(() => ({
       x: Particles.random(0, this.#width),
       y: Particles.random(0, this.#height),
-      speed: [Particles.random(-Math.PI, Math.PI), 50],
+      speed: 50,
+      angle: Particles.random(-180, 180),
     }));
     this.#draw();
 
     this.#onMouseMove = this.#handleMouseMove.bind(this);
+    this.#onMouseLeave = this.#handleMouseLeave.bind(this);
     this.#bindEvents();
-    
+
     this.#lastTimestemp = Date.now();
-    this.#flash()
+    this.#flash();
   }
 
   mount(el: HTMLElement) {
@@ -114,10 +139,14 @@ export default class Particles {
 
   #bindEvents() {
     this.#canvas.addEventListener("mousemove", this.#onMouseMove);
+    this.#canvas.addEventListener("mouseleave", this.#onMouseLeave);
   }
 
   #handleMouseMove(e: MouseEvent) {
-    console.log("move", e, this);
+    this.#mousePos = { x: e.offsetX, y: e.offsetY };
+  }
+  #handleMouseLeave() {
+    this.#mousePos = null;
   }
 
   #flash() {
@@ -125,9 +154,51 @@ export default class Particles {
     const step = now - this.#lastTimestemp;
     this.#lastTimestemp = now;
 
-    this.#points.map((point) => Particles.movePoint(point, step));
+    this.#points = this.#points.map((point, index) =>
+      this.#movePoint(point, step, this.#width, this.#height, index === 0)
+    );
     this.#draw();
     requestAnimationFrame(this.#flash.bind(this));
+  }
+
+  #movePoint(point: Point, timeMs: number, maxWidth: number, maxHeight: number, log?: boolean): Point {
+    let { speed, x, y, angle } = point;
+
+    if (this.#mousePos) {
+      const disFromMoouse = Particles.calcPointDistance({ x, y }, this.#mousePos);
+      if (disFromMoouse < 200) {
+        const forceAngle = Particles.calcPointAngle({ x, y }, this.#mousePos);
+        if (forceAngle !== undefined) {
+          console.log(forceAngle);
+          angle = forceAngle;
+          speed = disFromMoouse * 0.005 * 30 + 50;
+        }
+      }
+    } else {
+      speed = 50;
+    }
+
+    const r = speed * timeMs * 0.001;
+    x = x + r * Math.cos((angle * Math.PI) / 180);
+    y = y - r * Math.sin((angle * Math.PI) / 180);
+
+    if (x > maxWidth) {
+      x = maxWidth;
+      angle = Particles.mirrorAngle(angle, "y");
+    } else if (x < 0) {
+      x = -x;
+      angle = Particles.mirrorAngle(angle, "y");
+    }
+
+    if (y > maxHeight) {
+      y = maxHeight;
+      angle = Particles.mirrorAngle(angle, "x");
+    } else if (y < 0) {
+      y = -y;
+      angle = Particles.mirrorAngle(angle, "x");
+    }
+
+    return { speed, x, y, angle };
   }
 
   #draw() {

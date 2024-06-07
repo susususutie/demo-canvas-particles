@@ -4,8 +4,8 @@ let particles = new Particles({
   width: 800,
   height: 800,
   count: 100,
-  size: 3,
-  color: "#ededed",
+  size: 2,
+  color: "#efefef",
   maxLine: 200,
   lineWidth: 1,
 });

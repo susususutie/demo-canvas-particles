@@ -83,15 +83,15 @@ export default class Particles {
   }
 
   static calcAngleMove(d: number, angle: number) {
-    angle = angle % 360;
-
-    if (angle === 0) return { x: d, y: 0 };
-    if (angle === 90) return { x: 0, y: d };
-    if (angle === 180) return { x: -d, y: 0 };
-    if (angle === 270) return { x: 0, y: -d };
-    // TODO
-    // Math.cos(d) * 180 / Math.PI
-    return { x: 0, y: 0 };
+    // 将角度转换为弧度
+    const radians = angle * Math.PI / 180;
+    
+    // 使用三角函数计算 x 和 y 方向的移动量
+    // Math.round 避免浮点数精度问题
+    return {
+      x: Math.round(d * Math.cos(radians) * 1000) / 1000,
+      y: Math.round(d * Math.sin(radians) * 1000) / 1000
+    };
   }
 
   static mirrorAngle(angle: number, axis: "x" | "y"): number {
@@ -161,6 +161,7 @@ export default class Particles {
     if (this.#destroyed) return;
 
     this.#canvas.removeEventListener("mousemove", this.#onMouseMove);
+    this.#canvas.removeEventListener("mouseleave", this.#onMouseLeave);
     this.#destroyed = true;
   }
 
@@ -186,7 +187,7 @@ export default class Particles {
     requestAnimationFrame(this.#flash.bind(this));
   }
 
-  #movePoint(point: Point, timeMs: number, log?: boolean): Point {
+  #movePoint(point: Point, timeMs: number, _log?: boolean): Point {
     let { speed, x, y, angle } = point;
 
     if (this.#mousePos) {

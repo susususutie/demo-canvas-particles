@@ -11,8 +11,3 @@ let particles = new Particles({
 });
 
 particles.mount(document.querySelector("#app")!);
-
-// setTimeout(() => {
-//   particles.destroy();
-//   (particles as any) = null;
-// }, 3000);

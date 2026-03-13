@@ -1,4 +1,4 @@
-interface Options {
+export interface Options {
   el?: HTMLElement;
   width: number;
   height: number;
@@ -9,7 +9,7 @@ interface Options {
   lineWidth: number;
 }
 
-interface Point {
+export interface Point {
   x: number;
   y: number;
   /** 速度(px/s) */
@@ -182,12 +182,12 @@ export default class Particles {
     const step = now - this.#lastTimestemp;
     this.#lastTimestemp = now;
 
-    this.#points = this.#points.map((point, index) => this.#movePoint(point, step, index === 0));
+    this.#points = this.#points.map((point) => this.#movePoint(point, step));
     this.#draw();
     requestAnimationFrame(this.#flash.bind(this));
   }
 
-  #movePoint(point: Point, timeMs: number, _log?: boolean): Point {
+  #movePoint(point: Point, timeMs: number): Point {
     let { speed, x, y, angle } = point;
 
     if (this.#mousePos) {
@@ -199,8 +199,6 @@ export default class Particles {
           speed = disFromMoouse * 0.005 * 30 + 50;
         }
       }
-    } else {
-      // speed = Particles.random(40, 60);
     }
 
     const r = speed * timeMs * 0.001;

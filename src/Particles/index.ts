@@ -31,13 +31,13 @@ export default class Particles {
   #points: Point[];
   #canvas: HTMLCanvasElement;
   #ctx: CanvasRenderingContext2D;
-  #lastTimestemp = 0;
 
   #mousePos: null | { x: number; y: number } = null;
-  #onMouseMove: (ev: MouseEvent) => any;
-  #onMouseLeave: (ev: MouseEvent) => any;
+  #onMouseMove: (ev: MouseEvent) => void;
+  #onMouseLeave: (ev: MouseEvent) => void;
 
   #destroyed: boolean = false;
+  #lastTimestamp = 0;
 
   static random(start: number, end: number) {
     if (!Number.isFinite(start) || !Number.isFinite(end)) {
@@ -145,7 +145,7 @@ export default class Particles {
     this.#onMouseLeave = this.#handleMouseLeave.bind(this);
     this.#bindEvents();
 
-    this.#lastTimestemp = Date.now();
+    this.#lastTimestamp = Date.now();
     this.#flash();
   }
 
@@ -179,8 +179,8 @@ export default class Particles {
 
   #flash() {
     const now = Date.now();
-    const step = now - this.#lastTimestemp;
-    this.#lastTimestemp = now;
+    const step = now - this.#lastTimestamp;
+    this.#lastTimestamp = now;
 
     this.#points = this.#points.map((point) => this.#movePoint(point, step));
     this.#draw();

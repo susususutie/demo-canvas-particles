@@ -191,12 +191,12 @@ export default class Particles {
     let { speed, x, y, angle } = point;
 
     if (this.#mousePos) {
-      const disFromMoouse = Particles.calcPointDistance({ x, y }, this.#mousePos);
-      if (disFromMoouse < 200) {
+      const disFromMouse = Particles.calcPointDistance({ x, y }, this.#mousePos);
+      if (disFromMouse < 200) {
         const forceAngle = Particles.calcPointAngle({ x, y }, this.#mousePos);
         if (forceAngle !== undefined) {
           angle = forceAngle;
-          speed = disFromMoouse * 0.005 * 30 + 50;
+          speed = disFromMouse * 0.005 * 30 + 50;
         }
       }
     }
@@ -228,18 +228,19 @@ export default class Particles {
   #draw() {
     this.#ctx.clearRect(0, 0, this.#width, this.#height);
     this.#ctx.fillStyle = this.#color;
-    for (const point of this.#points) {
+
+    // 绘制点之间的连线
+    for (let i = 0; i < this.#points.length; i++) {
+      const point = this.#points[i];
       const { x, y } = point;
 
-      for (const anotherPoint of this.#points) {
+      for (let j = i + 1; j < this.#points.length; j++) {
+        const anotherPoint = this.#points[j];
         const d = Particles.calcPointDistance(point, anotherPoint);
         if (d <= this.#size || d >= this.#maxLine) continue;
 
-        const lineColor =
-          this.#color +
-          Math.floor((1 - d / this.#maxLine) * 0xff)
-            .toString(16)
-            .padStart(2, "0");
+        const opacity = 1 - d / this.#maxLine;
+        const lineColor = this.#color + Math.floor(opacity * 0xff).toString(16).padStart(2, "0");
 
         this.#ctx.beginPath();
         this.#ctx.strokeStyle = lineColor;
@@ -247,13 +248,15 @@ export default class Particles {
         this.#ctx.moveTo(x, y);
         this.#ctx.lineTo(anotherPoint.x, anotherPoint.y);
         this.#ctx.stroke();
-        this.#ctx.closePath();
       }
-
-      this.#ctx.beginPath();
-      this.#ctx.arc(x, y, this.#size, 0, 2 * Math.PI);
-      this.#ctx.fill();
-      this.#ctx.closePath();
     }
+
+    // 绘制粒子点
+    this.#ctx.beginPath();
+    for (const point of this.#points) {
+      this.#ctx.moveTo(point.x + this.#size, point.y);
+      this.#ctx.arc(point.x, point.y, this.#size, 0, 2 * Math.PI);
+    }
+    this.#ctx.fill();
   }
 }

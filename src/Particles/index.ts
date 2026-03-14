@@ -194,10 +194,8 @@ export default class Particles {
       const disFromMouse = Particles.calcPointDistance({ x, y }, this.#mousePos);
       if (disFromMouse < 200) {
         const forceAngle = Particles.calcPointAngle({ x, y }, this.#mousePos);
-        if (forceAngle !== undefined) {
-          angle = forceAngle;
-          speed = disFromMouse * 0.005 * 30 + 50;
-        }
+        angle = forceAngle;
+        speed = disFromMouse * 0.005 * 30 + 50;
       }
     }
 
@@ -239,8 +237,8 @@ export default class Particles {
         const d = Particles.calcPointDistance(point, anotherPoint);
         if (d <= this.#size || d >= this.#maxLine) continue;
 
-        const opacity = 1 - d / this.#maxLine;
-        const lineColor = this.#color + Math.floor(opacity * 0xff).toString(16).padStart(2, "0");
+        const opacity = Math.floor((1 - d / this.#maxLine) * 255).toString(16).padStart(2, "0");
+        const lineColor = this.#color + opacity;
 
         this.#ctx.beginPath();
         this.#ctx.strokeStyle = lineColor;

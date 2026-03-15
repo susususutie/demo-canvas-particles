@@ -95,18 +95,13 @@ export default class Particles {
   }
 
   static mirrorAngle(angle: number, axis: "x" | "y"): number {
-    angle = angle % 360;
+    // Normalize angle to 0-360 range (handle negative angles)
+    angle = ((angle % 360) + 360) % 360;
     if (axis === "x") {
       return 360 - angle;
     }
-    if (axis === "y") {
-      if (angle >= 0 && angle < 180) {
-        return 180 - angle;
-      } else {
-        return 360 - angle;
-      }
-    }
-    return angle;
+    // axis === "y": mirror across y-axis
+    return angle < 180 ? 180 - angle : 360 - angle;
   }
 
   constructor(options: Options) {
@@ -119,7 +114,7 @@ export default class Particles {
     this.#lineWidth = options.lineWidth;
     if (options.el) {
       if (!(options.el instanceof HTMLElement)) {
-        throw new TypeError("options.el shhould be Element");
+        throw new TypeError("options.el should be Element");
       }
       this.#el = options.el;
     }
